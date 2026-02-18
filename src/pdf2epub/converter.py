@@ -16,7 +16,7 @@ def convert(
     title: str | None = None,
     author: str | None = None,
     cover: str | None = None,
-    math_format: str = "mathml",
+    math_format: str = "svg",
     **kwargs
 ) -> str:
     """Convert a PDF file to EPUB format.
@@ -34,7 +34,7 @@ def convert(
         title: Optional title for the EPUB metadata.
         author: Optional author for the EPUB metadata.
         cover: Optional path to a cover image.
-        math_format: Format for rendering LaTeX math ('mathml' or 'svg').
+        math_format: Format for rendering LaTeX math ('svg' or 'mathml').
         **kwargs: Additional keyword arguments (for future extensibility).
         
     Returns:

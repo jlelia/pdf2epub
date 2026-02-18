@@ -11,6 +11,30 @@ class MarkerError(Exception):
     pass
 
 
+def _log_device_info() -> None:
+    """Log information about the available compute device (GPU/CPU)."""
+    try:
+        import torch
+        if torch.cuda.is_available():
+            device_name = torch.cuda.get_device_name(0)
+            vram_gb = torch.cuda.get_device_properties(0).total_memory / (1024 ** 3)
+            logger.info(f"GPU detected: {device_name} ({vram_gb:.1f} GB VRAM)")
+            if vram_gb < 4:
+                logger.warning(
+                    f"GPU has only {vram_gb:.1f} GB VRAM. marker-pdf typically requires "
+                    "3-5 GB of VRAM. Conversion may fail or fall back to CPU."
+                )
+        else:
+            logger.warning(
+                "No GPU detected — running marker-pdf on CPU. "
+                "Expect significantly longer conversion times. "
+                "If you have limited RAM (marker-pdf may use several GB), "
+                "the process could crash on large documents."
+            )
+    except ImportError:
+        logger.debug("PyTorch not available; cannot detect GPU/CPU device.")
+
+
 def run_marker(pdf_path: str, output_dir: str) -> tuple[str, str]:
     """Convert PDF to Markdown using marker-pdf.
     
@@ -35,6 +59,7 @@ def run_marker(pdf_path: str, output_dir: str) -> tuple[str, str]:
         ) from e
     
     logger.info(f"Converting PDF to Markdown: {pdf_path}")
+    _log_device_info()
     
     pdf_path_obj = Path(pdf_path)
     output_dir_obj = Path(output_dir)
