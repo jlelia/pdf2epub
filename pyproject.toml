@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf2epub"
+version = "0.1.0"
+description = "Convert PDF books and scientific papers into well-formatted EPUB files"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "James", email = "james@example.com"}
+]
+requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Text Processing",
+    "Topic :: Utilities",
+]
+dependencies = [
+    "marker-pdf>=0.2.0",
+    "pypandoc>=1.11",
+    "click>=8.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+    "pytest-mock>=3.10.0",
+]
+
+[project.scripts]
+pdf2epub = "pdf2epub.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/jlelia/pdf2epub"
+Repository = "https://github.com/jlelia/pdf2epub"
+Issues = "https://github.com/jlelia/pdf2epub/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
