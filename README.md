@@ -193,7 +193,9 @@ EPUB Output
 `pdf2epub` sets several EPUB metadata fields required for reliable Kindle delivery and display:
 
 - **Language** (`dc:language`): Always included (default `en`). A missing language is a known cause of Kindle error 999. Use `--language` to set the correct BCP 47 tag for your document (e.g. `fr` for French, `de` for German).
-- **Unique identifier** (`dc:identifier`): pandoc automatically generates a UUID for each EPUB, satisfying this required EPUB field.
+- **Publication date** (`dc:date`): Always set to today's date in ISO 8601 format. Pandoc only emits `dc:date` when the variable is explicitly provided; without it the field is absent, which violates the EPUB spec recommendation and can trigger validation errors on some Kindle devices.
+- **Last-modified timestamp** (`dcterms:modified`): Required by the EPUB 3.2 spec. Pandoc auto-generates this using the current UTC time.
+- **Unique identifier** (`dc:identifier`): Required by the EPUB spec. Pandoc automatically generates a UUID for each EPUB.
 - **Title** (`dc:title`): Use `--title` to set a descriptive title. Without a title, some Kindle devices show the filename instead.
 - **Math as SVG**: The default `--math-format svg` is recommended for Kindle because Kindle does not support MathML.
 
