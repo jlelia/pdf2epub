@@ -19,6 +19,7 @@ def convert(
     cover: str | None = None,
     math_format: str = "svg",
     save_markdown: str | None = None,
+    language: str = "en",
     **kwargs
 ) -> str:
     """Convert a PDF file to EPUB format.
@@ -38,6 +39,7 @@ def convert(
         cover: Optional path to a cover image.
         math_format: Format for rendering LaTeX math ('svg' or 'mathml').
         save_markdown: Optional path to save the intermediate Markdown file.
+        language: BCP 47 language tag for the EPUB (default: 'en').
         **kwargs: Additional keyword arguments (for future extensibility).
         
     Returns:
@@ -87,7 +89,8 @@ def convert(
                 title=title,
                 author=author,
                 cover=cover,
-                math_format=math_format
+                math_format=math_format,
+                language=language
             )
             logger.info(f"EPUB generated: {epub_path}")
             

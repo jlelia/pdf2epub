@@ -168,3 +168,37 @@ class TestConverter:
                 # Verify the markdown was saved
                 assert save_md_path.exists()
                 assert save_md_path.read_text() == "# Test Document\n\nSome content."
+
+    def test_convert_default_language(self, tmp_path):
+        """Test that the default language 'en' is passed to pandoc."""
+        pdf_path = tmp_path / "test.pdf"
+        pdf_path.write_bytes(b"%PDF-1.4 fake pdf")
+        
+        output_path = tmp_path / "output.epub"
+        
+        with patch("pdf2epub.converter.run_marker") as mock_marker:
+            with patch("pdf2epub.converter.run_pandoc") as mock_pandoc:
+                mock_marker.return_value = ("/tmp/test.md", "/tmp/images")
+                mock_pandoc.return_value = str(output_path)
+                
+                convert(str(pdf_path), str(output_path))
+                
+                call_kwargs = mock_pandoc.call_args[1]
+                assert call_kwargs["language"] == "en"
+
+    def test_convert_custom_language(self, tmp_path):
+        """Test that a custom language is passed to pandoc."""
+        pdf_path = tmp_path / "test.pdf"
+        pdf_path.write_bytes(b"%PDF-1.4 fake pdf")
+        
+        output_path = tmp_path / "output.epub"
+        
+        with patch("pdf2epub.converter.run_marker") as mock_marker:
+            with patch("pdf2epub.converter.run_pandoc") as mock_pandoc:
+                mock_marker.return_value = ("/tmp/test.md", "/tmp/images")
+                mock_pandoc.return_value = str(output_path)
+                
+                convert(str(pdf_path), str(output_path), language="de")
+                
+                call_kwargs = mock_pandoc.call_args[1]
+                assert call_kwargs["language"] == "de"

@@ -18,7 +18,8 @@ def run_pandoc(
     title: str | None = None,
     author: str | None = None,
     cover: str | None = None,
-    math_format: str = "svg"
+    math_format: str = "svg",
+    language: str = "en"
 ) -> str:
     """Convert Markdown to EPUB using pandoc.
     
@@ -30,6 +31,7 @@ def run_pandoc(
         author: Optional author for the EPUB metadata.
         cover: Optional path to cover image.
         math_format: Format for rendering LaTeX math ('svg' or 'mathml').
+        language: BCP 47 language tag for the EPUB (default: 'en').
         
     Returns:
         Path to the generated EPUB file.
@@ -81,6 +83,10 @@ def run_pandoc(
     if author:
         extra_args.extend(["--metadata", f"author={author}"])
         logger.debug(f"Setting author: {author}")
+
+    # Set language (required by EPUB spec; missing language causes Kindle errors)
+    extra_args.extend(["--metadata", f"lang={language}"])
+    logger.debug(f"Setting language: {language}")
     
     # Add cover image
     if cover:

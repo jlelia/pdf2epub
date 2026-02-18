@@ -175,6 +175,50 @@ class TestPandocStep:
             assert not any("title=" in str(arg) for arg in extra_args)
             assert not any("author=" in str(arg) for arg in extra_args)
 
+    def test_run_pandoc_default_language(self, tmp_path):
+        """Test that the default language 'en' is set in EPUB metadata."""
+        markdown_path = tmp_path / "test.md"
+        markdown_path.write_text("# Test")
+        
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        
+        output_path = tmp_path / "output.epub"
+        
+        with patch("pypandoc.convert_file") as mock_convert:
+            def create_epub(*args, **kwargs):
+                output_path.write_bytes(b"fake epub")
+            
+            mock_convert.side_effect = create_epub
+            
+            run_pandoc(str(markdown_path), str(output_path), str(images_dir))
+            
+            # Verify default language 'en' is included
+            extra_args = mock_convert.call_args[1]["extra_args"]
+            assert "lang=en" in extra_args
+
+    def test_run_pandoc_custom_language(self, tmp_path):
+        """Test that a custom language tag is set in EPUB metadata."""
+        markdown_path = tmp_path / "test.md"
+        markdown_path.write_text("# Test")
+        
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        
+        output_path = tmp_path / "output.epub"
+        
+        with patch("pypandoc.convert_file") as mock_convert:
+            def create_epub(*args, **kwargs):
+                output_path.write_bytes(b"fake epub")
+            
+            mock_convert.side_effect = create_epub
+            
+            run_pandoc(str(markdown_path), str(output_path), str(images_dir), language="fr")
+            
+            # Verify custom language 'fr' is included
+            extra_args = mock_convert.call_args[1]["extra_args"]
+            assert "lang=fr" in extra_args
+
     def test_run_pandoc_resource_path_points_to_images_dir(self, tmp_path):
         """Test that resource path points to images directory itself, not its parent.
         

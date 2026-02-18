@@ -93,6 +93,11 @@ pdf2epub paper.pdf --math-format mathml --title "Research Paper"
 pdf2epub input.pdf --save-markdown output.md
 ```
 
+**Set EPUB language:**
+```bash
+pdf2epub input.pdf --language fr
+```
+
 **Verbose output:**
 ```bash
 pdf2epub input.pdf -v
@@ -105,6 +110,7 @@ pdf2epub book.pdf \
   --title "The Great Book" \
   --author "Jane Doe" \
   --cover cover.png \
+  --language en \
   --save-markdown my-book.md \
   --verbose
 ```
@@ -125,6 +131,7 @@ epub_path = convert(
     author="Author Name",
     cover="cover.jpg",
     math_format="svg",  # default; use "mathml" if your e-reader prefers it
+    language="en",      # BCP 47 language tag (default: "en")
     save_markdown="output.md"  # optional; saves intermediate Markdown for debugging
 )
 
@@ -141,6 +148,7 @@ print(f"EPUB created: {epub_path}")
 | `--author` | EPUB author metadata | None |
 | `--cover` | Path to cover image | None |
 | `--math-format` | Math rendering format (`mathml` or `svg`) | `svg` |
+| `--language` | BCP 47 language tag for the EPUB (e.g. `en`, `fr`, `de`) | `en` |
 | `--save-markdown` | Save intermediate Markdown file to this path | None |
 | `-v, --verbose` | Enable verbose logging | False |
 | `--version` | Show version and exit | - |
@@ -179,6 +187,15 @@ EPUB Output
 
 - **SVG** (default): Renders equations as scalable vector graphics embedded in the EPUB. Broadly compatible with e-readers including Kindle, which does not support MathML natively.
 - **MathML**: Alternative rendering using structured mathematical markup. Supported by some e-readers (e.g., Apple Books) but **not** recommended for Kindle.
+
+### Kindle Compatibility
+
+`pdf2epub` sets several EPUB metadata fields required for reliable Kindle delivery and display:
+
+- **Language** (`dc:language`): Always included (default `en`). A missing language is a known cause of Kindle error 999. Use `--language` to set the correct BCP 47 tag for your document (e.g. `fr` for French, `de` for German).
+- **Unique identifier** (`dc:identifier`): pandoc automatically generates a UUID for each EPUB, satisfying this required EPUB field.
+- **Title** (`dc:title`): Use `--title` to set a descriptive title. Without a title, some Kindle devices show the filename instead.
+- **Math as SVG**: The default `--math-format svg` is recommended for Kindle because Kindle does not support MathML.
 
 ## Dependencies
 
