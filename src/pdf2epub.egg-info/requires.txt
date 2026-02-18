@@ -1,0 +1,8 @@
+marker-pdf>=0.2.0
+pypandoc>=1.11
+click>=8.0.0
+
+[dev]
+pytest>=7.0.0
+pytest-cov>=4.0.0
+pytest-mock>=3.10.0

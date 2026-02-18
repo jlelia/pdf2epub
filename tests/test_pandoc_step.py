@@ -22,12 +22,12 @@ class TestPandocStep:
         output_path = tmp_path / "output.epub"
         
         # Mock pypandoc
-        with patch("pdf2epub.pandoc_step.pypandoc") as mock_pypandoc:
+        with patch("pypandoc.convert_file") as mock_convert:
             # Make the output file exist after conversion
             def create_epub(*args, **kwargs):
                 output_path.write_bytes(b"fake epub")
             
-            mock_pypandoc.convert_file.side_effect = create_epub
+            mock_convert.side_effect = create_epub
             
             # Run pandoc
             result = run_pandoc(
@@ -41,10 +41,10 @@ class TestPandocStep:
             
             # Verify
             assert result == str(output_path)
-            assert mock_pypandoc.convert_file.called
+            assert mock_convert.called
             
             # Check call arguments
-            call_args = mock_pypandoc.convert_file.call_args
+            call_args = mock_convert.call_args
             assert call_args[0][0] == str(markdown_path)
             assert call_args[1]["outputfile"] == str(output_path)
             
@@ -66,11 +66,11 @@ class TestPandocStep:
         
         output_path = tmp_path / "output.epub"
         
-        with patch("pdf2epub.pandoc_step.pypandoc") as mock_pypandoc:
+        with patch("pypandoc.convert_file") as mock_convert:
             def create_epub(*args, **kwargs):
                 output_path.write_bytes(b"fake epub")
             
-            mock_pypandoc.convert_file.side_effect = create_epub
+            mock_convert.side_effect = create_epub
             
             result = run_pandoc(
                 str(markdown_path),
@@ -80,7 +80,7 @@ class TestPandocStep:
             )
             
             # Verify cover was included
-            extra_args = mock_pypandoc.convert_file.call_args[1]["extra_args"]
+            extra_args = mock_convert.call_args[1]["extra_args"]
             assert "--epub-cover-image" in extra_args
             assert str(cover_path) in extra_args
     
@@ -94,11 +94,11 @@ class TestPandocStep:
         
         output_path = tmp_path / "output.epub"
         
-        with patch("pdf2epub.pandoc_step.pypandoc") as mock_pypandoc:
+        with patch("pypandoc.convert_file") as mock_convert:
             def create_epub(*args, **kwargs):
                 output_path.write_bytes(b"fake epub")
             
-            mock_pypandoc.convert_file.side_effect = create_epub
+            mock_convert.side_effect = create_epub
             
             run_pandoc(
                 str(markdown_path),
@@ -108,12 +108,14 @@ class TestPandocStep:
             )
             
             # Verify SVG/webtex was used
-            extra_args = mock_pypandoc.convert_file.call_args[1]["extra_args"]
+            extra_args = mock_convert.call_args[1]["extra_args"]
             assert "--webtex" in extra_args
     
     def test_run_pandoc_import_error(self, tmp_path):
         """Test that ImportError is raised when pypandoc is not installed."""
-        with patch("pdf2epub.pandoc_step.pypandoc", side_effect=ImportError):
+        # Mock the import to fail
+        import sys
+        with patch.dict(sys.modules, {'pypandoc': None}):
             with pytest.raises(ImportError, match="pypandoc is not installed"):
                 run_pandoc("test.md", "test.epub", "images")
     
@@ -127,8 +129,8 @@ class TestPandocStep:
         
         output_path = tmp_path / "output.epub"
         
-        with patch("pdf2epub.pandoc_step.pypandoc") as mock_pypandoc:
-            mock_pypandoc.convert_file.side_effect = Exception("Pandoc failed")
+        with patch("pypandoc.convert_file") as mock_convert:
+            mock_convert.side_effect = Exception("Pandoc failed")
             
             with pytest.raises(PandocError, match="Failed to convert Markdown to EPUB"):
                 run_pandoc(str(markdown_path), str(output_path), str(images_dir))
@@ -143,9 +145,9 @@ class TestPandocStep:
         
         output_path = tmp_path / "output.epub"
         
-        with patch("pdf2epub.pandoc_step.pypandoc") as mock_pypandoc:
+        with patch("pypandoc.convert_file") as mock_convert:
             # Don't create the output file
-            mock_pypandoc.convert_file.return_value = None
+            mock_convert.return_value = None
             
             with pytest.raises(PandocError, match="EPUB file was not created"):
                 run_pandoc(str(markdown_path), str(output_path), str(images_dir))
@@ -160,15 +162,15 @@ class TestPandocStep:
         
         output_path = tmp_path / "output.epub"
         
-        with patch("pdf2epub.pandoc_step.pypandoc") as mock_pypandoc:
+        with patch("pypandoc.convert_file") as mock_convert:
             def create_epub(*args, **kwargs):
                 output_path.write_bytes(b"fake epub")
             
-            mock_pypandoc.convert_file.side_effect = create_epub
+            mock_convert.side_effect = create_epub
             
             run_pandoc(str(markdown_path), str(output_path), str(images_dir))
             
             # Verify no title/author in extra args
-            extra_args = mock_pypandoc.convert_file.call_args[1]["extra_args"]
+            extra_args = mock_convert.call_args[1]["extra_args"]
             assert not any("title=" in str(arg) for arg in extra_args)
             assert not any("author=" in str(arg) for arg in extra_args)

@@ -22,8 +22,8 @@ class TestMarkerStep:
         mock_converter = Mock()
         mock_converter.return_value = mock_rendered
         
-        with patch("pdf2epub.marker_step.PdfConverter", return_value=mock_converter):
-            with patch("pdf2epub.marker_step.create_model_dict", return_value={}):
+        with patch("marker.converters.pdf.PdfConverter", return_value=mock_converter):
+            with patch("marker.models.create_model_dict", return_value={}):
                 # Create a fake PDF file
                 pdf_path = tmp_path / "test.pdf"
                 pdf_path.write_text("fake pdf")
@@ -52,8 +52,8 @@ class TestMarkerStep:
         mock_converter = Mock()
         mock_converter.return_value = mock_rendered
         
-        with patch("pdf2epub.marker_step.PdfConverter", return_value=mock_converter):
-            with patch("pdf2epub.marker_step.create_model_dict", return_value={}):
+        with patch("marker.converters.pdf.PdfConverter", return_value=mock_converter):
+            with patch("marker.models.create_model_dict", return_value={}):
                 pdf_path = tmp_path / "test.pdf"
                 pdf_path.write_text("fake pdf")
                 
@@ -66,7 +66,9 @@ class TestMarkerStep:
     
     def test_run_marker_import_error(self, tmp_path):
         """Test that ImportError is raised when marker is not installed."""
-        with patch("pdf2epub.marker_step.PdfConverter", side_effect=ImportError):
+        # Mock the import to raise an ImportError
+        import sys
+        with patch.dict(sys.modules, {'marker': None, 'marker.converters': None, 'marker.converters.pdf': None}):
             pdf_path = tmp_path / "test.pdf"
             pdf_path.write_text("fake pdf")
             
@@ -78,8 +80,8 @@ class TestMarkerStep:
         mock_converter = Mock()
         mock_converter.side_effect = Exception("Conversion failed")
         
-        with patch("pdf2epub.marker_step.PdfConverter", return_value=mock_converter):
-            with patch("pdf2epub.marker_step.create_model_dict", return_value={}):
+        with patch("marker.converters.pdf.PdfConverter", return_value=mock_converter):
+            with patch("marker.models.create_model_dict", return_value={}):
                 pdf_path = tmp_path / "test.pdf"
                 pdf_path.write_text("fake pdf")
                 
@@ -100,8 +102,8 @@ class TestMarkerStep:
         mock_converter = Mock()
         mock_converter.return_value = mock_rendered
         
-        with patch("pdf2epub.marker_step.PdfConverter", return_value=mock_converter):
-            with patch("pdf2epub.marker_step.create_model_dict", return_value={}):
+        with patch("marker.converters.pdf.PdfConverter", return_value=mock_converter):
+            with patch("marker.models.create_model_dict", return_value={}):
                 pdf_path = tmp_path / "test.pdf"
                 pdf_path.write_text("fake pdf")
                 
