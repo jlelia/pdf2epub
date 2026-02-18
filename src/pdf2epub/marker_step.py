@@ -1,7 +1,10 @@
 """Marker step for converting PDF to Markdown."""
 
 import logging
+import shutil
 from pathlib import Path
+
+from pdf2epub.utils import clean_incomplete_model_downloads
 
 logger = logging.getLogger(__name__)
 
@@ -67,7 +70,27 @@ def run_marker(pdf_path: str, output_dir: str) -> tuple[str, str]:
     
     try:
         # Create model dictionary for marker
-        model_dict = create_model_dict()
+        # First attempt - this might fail if there are leftover files from a previous failed download
+        try:
+            model_dict = create_model_dict()
+        except Exception as e:
+            # Check if this is a "Destination path already exists" error from incomplete downloads
+            error_str = str(e)
+            if "Destination path" in error_str and "already exists" in error_str:
+                logger.warning(
+                    "Model download failed due to existing files from incomplete download. "
+                    "Cleaning up and retrying..."
+                )
+                # Clean up incomplete model downloads
+                clean_incomplete_model_downloads(logger)
+                
+                # Retry the model loading
+                logger.info("Retrying model download after cleanup...")
+                model_dict = create_model_dict()
+                logger.info("Model download successful after cleanup")
+            else:
+                # Different error, re-raise it
+                raise
         
         # Initialize the PDF converter
         converter = PdfConverter(artifact_dict=model_dict)

@@ -88,6 +88,75 @@ class TestMarkerStep:
                 with pytest.raises(MarkerError, match="Failed to convert PDF"):
                     run_marker(str(pdf_path), str(tmp_path))
     
+    def test_run_marker_model_download_retry_success(self, tmp_path):
+        """Test that model download is retried successfully after cleanup on 'Destination path already exists' error."""
+        mock_rendered = Mock()
+        mock_rendered.markdown = "# Test"
+        mock_rendered.images = {}
+        
+        mock_converter = Mock()
+        mock_converter.return_value = mock_rendered
+        
+        # First call to create_model_dict fails with the specific error
+        # Second call succeeds
+        call_count = [0]
+        def create_model_dict_side_effect():
+            call_count[0] += 1
+            if call_count[0] == 1:
+                raise Exception("Destination path 'C:\\Users\\test\\models\\layout\\.gitattributes' already exists")
+            return {}
+        
+        with patch("marker.converters.pdf.PdfConverter", return_value=mock_converter):
+            with patch("marker.models.create_model_dict", side_effect=create_model_dict_side_effect):
+                with patch("pdf2epub.marker_step.clean_incomplete_model_downloads") as mock_cleanup:
+                    pdf_path = tmp_path / "test.pdf"
+                    pdf_path.write_text("fake pdf")
+                    
+                    output_dir = tmp_path / "output"
+                    
+                    # Should succeed after retry
+                    markdown_path, images_dir = run_marker(str(pdf_path), str(output_dir))
+                    
+                    # Verify cleanup was called
+                    mock_cleanup.assert_called_once()
+                    # Verify create_model_dict was called twice
+                    assert call_count[0] == 2
+                    # Verify output was created
+                    assert Path(markdown_path).exists()
+    
+    def test_run_marker_model_download_retry_failure(self, tmp_path):
+        """Test that error is raised if model download fails even after cleanup."""
+        # Both calls to create_model_dict fail with the specific error
+        def create_model_dict_side_effect():
+            raise Exception("Destination path 'C:\\Users\\test\\models\\layout\\.gitattributes' already exists")
+        
+        with patch("marker.models.create_model_dict", side_effect=create_model_dict_side_effect):
+            with patch("pdf2epub.marker_step.clean_incomplete_model_downloads") as mock_cleanup:
+                pdf_path = tmp_path / "test.pdf"
+                pdf_path.write_text("fake pdf")
+                
+                with pytest.raises(MarkerError, match="already exists"):
+                    run_marker(str(pdf_path), str(tmp_path))
+                
+                # Verify cleanup was called
+                mock_cleanup.assert_called_once()
+    
+    def test_run_marker_model_download_different_error(self, tmp_path):
+        """Test that different errors are not treated as incomplete download errors."""
+        def create_model_dict_side_effect():
+            raise Exception("Network error: could not connect")
+        
+        with patch("marker.models.create_model_dict", side_effect=create_model_dict_side_effect):
+            with patch("pdf2epub.marker_step.clean_incomplete_model_downloads") as mock_cleanup:
+                pdf_path = tmp_path / "test.pdf"
+                pdf_path.write_text("fake pdf")
+                
+                with pytest.raises(MarkerError, match="Network error"):
+                    run_marker(str(pdf_path), str(tmp_path))
+                
+                # Verify cleanup was NOT called for different error
+                mock_cleanup.assert_not_called()
+    
     def test_run_marker_with_pil_images(self, tmp_path):
         """Test marker conversion with PIL Image objects."""
         mock_image = MagicMock()
