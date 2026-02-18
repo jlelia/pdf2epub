@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 @click.option(
     "--math-format",
     type=click.Choice(["mathml", "svg"], case_sensitive=False),
-    default="mathml",
-    help="Format for rendering LaTeX math (default: mathml)"
+    default="svg",
+    help="Format for rendering LaTeX math (default: svg)"
 )
 @click.option(
     "-v", "--verbose",
@@ -76,8 +76,7 @@ def main(
         
         pdf2epub input.pdf -o output.epub --title "My Book" --author "Author Name"
         
-        pdf2epub paper.pdf --math-format mathml --verbose
-    """
+        pdf2epub paper.pdf --math-format mathml --verbose    """
     # Setup logging
     setup_logging(verbose=verbose)
     

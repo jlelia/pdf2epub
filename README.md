@@ -8,13 +8,13 @@ Convert PDF books and scientific papers into well-formatted EPUB files suitable 
 
 1. **Marker Phase** ([marker-pdf](https://github.com/VikParuchuri/marker)): A deep learning pipeline that visually parses the PDF and extracts it into standard Markdown, cleanly isolating images and formatting mathematical equations into LaTeX.
 
-2. **Pandoc Phase**: The universal document converter takes Marker's Markdown output, renders the LaTeX math into a Kindle-friendly format (MathML or SVG), embeds local images, and packages everything into an EPUB structure.
+2. **Pandoc Phase**: The universal document converter takes Marker's Markdown output, renders the LaTeX math into SVG (the default, broadly compatible format) or MathML, embeds local images, and packages everything into an EPUB structure.
 
 ## Features
 
 - 🎯 **High-Quality Conversion**: Preserves formatting, images, and mathematical equations
 - 📚 **E-Reader Optimized**: Generates EPUBs optimized for Kindle and other e-readers
-- 🔬 **Scientific Papers**: Handles LaTeX math rendering (MathML or SVG)
+- 🔬 **Scientific Papers**: Handles LaTeX math rendering (SVG by default, MathML optional)
 - 🖼️ **Image Support**: Automatically extracts and embeds images
 - 📖 **Metadata Support**: Add title, author, and cover images to your EPUBs
 - 🎨 **CLI and Python API**: Use from command line or integrate into your Python projects
@@ -28,6 +28,9 @@ Convert PDF books and scientific papers into well-formatted EPUB files suitable 
    - **Ubuntu/Debian**: `sudo apt install pandoc`
    - **macOS**: `brew install pandoc`
    - **Windows**: Download from [pandoc.org](https://pandoc.org/installing.html)
+3. **PyTorch** (required by marker-pdf): Install a version compatible with your hardware **before** installing `pdf2epub` to ensure GPU acceleration works correctly. See [pytorch.org/get-started](https://pytorch.org/get-started/locally/) for instructions.
+   - **GPU (CUDA)**: `pip install torch --index-url https://download.pytorch.org/whl/cu121`
+   - **CPU only**: `pip install torch`
 
 ### Install pdf2epub
 
@@ -77,6 +80,11 @@ pdf2epub input.pdf --cover cover.jpg
 
 **Scientific papers with math:**
 ```bash
+pdf2epub paper.pdf --title "Research Paper"
+```
+
+**Use MathML instead of SVG (not recommended for Kindle):**
+```bash
 pdf2epub paper.pdf --math-format mathml --title "Research Paper"
 ```
 
@@ -92,7 +100,6 @@ pdf2epub book.pdf \
   --title "The Great Book" \
   --author "Jane Doe" \
   --cover cover.png \
-  --math-format mathml \
   --verbose
 ```
 
@@ -111,7 +118,7 @@ epub_path = convert(
     title="My Book",
     author="Author Name",
     cover="cover.jpg",
-    math_format="mathml"  # or "svg"
+    math_format="svg"  # default; use "mathml" if your e-reader prefers it
 )
 
 print(f"EPUB created: {epub_path}")
@@ -126,7 +133,7 @@ print(f"EPUB created: {epub_path}")
 | `--title` | EPUB title metadata | None |
 | `--author` | EPUB author metadata | None |
 | `--cover` | Path to cover image | None |
-| `--math-format` | Math rendering format (`mathml` or `svg`) | `mathml` |
+| `--math-format` | Math rendering format (`mathml` or `svg`) | `svg` |
 | `-v, --verbose` | Enable verbose logging | False |
 | `--version` | Show version and exit | - |
 | `--help` | Show help message | - |
@@ -151,7 +158,7 @@ Markdown + Images + LaTeX Math
 ┌─────────────────────────────────────┐
 │  Phase 2: Pandoc                    │
 │  • Converts Markdown to EPUB        │
-│  • Renders LaTeX to MathML/SVG      │
+│  • Renders LaTeX to SVG (or MathML) │
 │  • Embeds images                    │
 │  • Adds metadata and cover          │
 │  • Generates table of contents      │
@@ -162,8 +169,8 @@ EPUB Output
 
 ### Math Rendering
 
-- **MathML** (default): Best for most e-readers including Kindle. Renders equations as proper mathematical markup.
-- **SVG**: Alternative rendering using images. Use if your target e-reader doesn't support MathML.
+- **SVG** (default): Renders equations as scalable vector graphics embedded in the EPUB. Broadly compatible with e-readers including Kindle, which does not support MathML natively.
+- **MathML**: Alternative rendering using structured mathematical markup. Supported by some e-readers (e.g., Apple Books) but **not** recommended for Kindle.
 
 ## Dependencies
 
@@ -176,9 +183,10 @@ EPUB Output
 - **Pandoc**: Universal document converter (must be installed separately)
 
 ### Marker Dependencies
-marker-pdf requires PyTorch and other ML dependencies. These are automatically installed with marker-pdf, but note that:
-- First run may download ML models (~500MB)
-- GPU acceleration is optional but recommended for large PDFs
+marker-pdf relies on heavy vision transformer models and requires PyTorch. Key points:
+- **Model size**: The ML models downloaded on first run are approximately **2–4 GB**. Ensure you have sufficient disk space.
+- **GPU (recommended)**: marker-pdf typically requires **3–5 GB of VRAM**. Install a CUDA-compatible PyTorch before installing `pdf2epub` (see [Prerequisites](#prerequisites)).
+- **CPU fallback**: marker-pdf will run on CPU if no GPU is available, but expect **significantly longer conversion times**. Large documents may also exhaust system RAM and cause the process to crash.
 
 ## Testing
 
@@ -211,13 +219,23 @@ Install Pandoc on your system (see Installation section above).
 pip install marker-pdf
 ```
 
-### First run is slow
-Marker downloads ML models on first run (~500MB). Subsequent runs are much faster.
+### First run is slow / downloading models
+marker-pdf downloads vision transformer models on first run (**~2–4 GB**). Subsequent runs are much faster.
+
+### Slow conversion or process crash on CPU
+marker-pdf uses deep learning models that run much faster on a GPU (3–5 GB VRAM recommended). Without a GPU:
+- Conversion of a long document can take many minutes or even hours.
+- The process may crash if system RAM is exhausted (marker-pdf can use several GB of RAM).
+
+To speed things up, install a CUDA-enabled PyTorch and ensure your GPU has enough VRAM:
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cu121
+```
 
 ### Math equations not rendering
-Try switching math format:
+By default, `pdf2epub` uses SVG math rendering via pandoc's `--webtex` option, which fetches rendered SVG equations from an external web service (CodeCogs). This requires an internet connection during conversion. If you are offline, use MathML instead:
 ```bash
-pdf2epub input.pdf --math-format svg
+pdf2epub input.pdf --math-format mathml
 ```
 
 ### Low quality output

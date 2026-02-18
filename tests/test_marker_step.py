@@ -4,7 +4,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 
-from pdf2epub.marker_step import run_marker, MarkerError
+from pdf2epub.marker_step import run_marker, MarkerError, _log_device_info
 
 
 class TestMarkerStep:
@@ -113,3 +113,63 @@ class TestMarkerStep:
                 
                 # Verify the PIL image save was called
                 assert mock_image.save.called
+
+
+class TestLogDeviceInfo:
+    """Tests for the GPU/CPU device detection helper."""
+
+    def test_log_device_info_gpu_available(self, caplog):
+        """Test logging when a GPU is available."""
+        mock_props = Mock()
+        mock_props.total_memory = 8 * (1024 ** 3)  # 8 GB
+
+        mock_torch = MagicMock()
+        mock_torch.cuda.is_available.return_value = True
+        mock_torch.cuda.get_device_name.return_value = "NVIDIA GeForce RTX 3080"
+        mock_torch.cuda.get_device_properties.return_value = mock_props
+
+        with patch.dict("sys.modules", {"torch": mock_torch}):
+            import logging
+            with caplog.at_level(logging.INFO, logger="pdf2epub.marker_step"):
+                _log_device_info()
+
+        assert any("NVIDIA GeForce RTX 3080" in m for m in caplog.messages)
+
+    def test_log_device_info_low_vram_warning(self, caplog):
+        """Test that a warning is emitted for GPUs with insufficient VRAM."""
+        mock_props = Mock()
+        mock_props.total_memory = 2 * (1024 ** 3)  # 2 GB — below the 4 GB threshold
+
+        mock_torch = MagicMock()
+        mock_torch.cuda.is_available.return_value = True
+        mock_torch.cuda.get_device_name.return_value = "Some GPU"
+        mock_torch.cuda.get_device_properties.return_value = mock_props
+
+        with patch.dict("sys.modules", {"torch": mock_torch}):
+            import logging
+            with caplog.at_level(logging.WARNING, logger="pdf2epub.marker_step"):
+                _log_device_info()
+
+        assert any("VRAM" in m for m in caplog.messages)
+
+    def test_log_device_info_cpu_only_warning(self, caplog):
+        """Test that a warning is emitted when no GPU is available."""
+        mock_torch = MagicMock()
+        mock_torch.cuda.is_available.return_value = False
+
+        with patch.dict("sys.modules", {"torch": mock_torch}):
+            import logging
+            with caplog.at_level(logging.WARNING, logger="pdf2epub.marker_step"):
+                _log_device_info()
+
+        assert any("CPU" in m for m in caplog.messages)
+
+    def test_log_device_info_no_torch(self, caplog):
+        """Test graceful handling when torch is not installed."""
+        import sys
+        with patch.dict(sys.modules, {"torch": None}):
+            import logging
+            with caplog.at_level(logging.DEBUG, logger="pdf2epub.marker_step"):
+                _log_device_info()
+        # Should not raise; debug message about torch not being available
+

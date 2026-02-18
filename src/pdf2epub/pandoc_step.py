@@ -18,7 +18,7 @@ def run_pandoc(
     title: str | None = None,
     author: str | None = None,
     cover: str | None = None,
-    math_format: str = "mathml"
+    math_format: str = "svg"
 ) -> str:
     """Convert Markdown to EPUB using pandoc.
     
@@ -29,7 +29,7 @@ def run_pandoc(
         title: Optional title for the EPUB metadata.
         author: Optional author for the EPUB metadata.
         cover: Optional path to cover image.
-        math_format: Format for rendering LaTeX math ('mathml' or 'svg').
+        math_format: Format for rendering LaTeX math ('svg' or 'mathml').
         
     Returns:
         Path to the generated EPUB file.
