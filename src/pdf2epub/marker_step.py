@@ -1,7 +1,6 @@
 """Marker step for converting PDF to Markdown."""
 
 import logging
-import shutil
 from pathlib import Path
 
 from pdf2epub.utils import clean_incomplete_model_downloads
