@@ -1,6 +1,7 @@
 """Main converter orchestration for pdf2epub."""
 
 import logging
+import shutil
 from pathlib import Path
 
 from pdf2epub.marker_step import run_marker
@@ -17,6 +18,7 @@ def convert(
     author: str | None = None,
     cover: str | None = None,
     math_format: str = "svg",
+    save_markdown: str | None = None,
     **kwargs
 ) -> str:
     """Convert a PDF file to EPUB format.
@@ -35,6 +37,7 @@ def convert(
         author: Optional author for the EPUB metadata.
         cover: Optional path to a cover image.
         math_format: Format for rendering LaTeX math ('svg' or 'mathml').
+        save_markdown: Optional path to save the intermediate Markdown file.
         **kwargs: Additional keyword arguments (for future extensibility).
         
     Returns:
@@ -67,6 +70,13 @@ def convert(
             logger.info("Phase 1: Converting PDF to Markdown with marker...")
             markdown_path, images_dir = run_marker(str(pdf_path_obj), str(temp_dir))
             logger.info(f"Markdown generated: {markdown_path}")
+            
+            # Save intermediate Markdown if requested
+            if save_markdown:
+                save_markdown_path = Path(save_markdown)
+                save_markdown_path.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(markdown_path, save_markdown_path)
+                logger.info(f"Markdown saved to: {save_markdown_path}")
             
             # Phase 2: Markdown to EPUB using pandoc
             logger.info("Phase 2: Converting Markdown to EPUB with pandoc...")

@@ -60,8 +60,8 @@ def run_pandoc(
     
     # Set resource path for images
     if images_dir_obj.exists():
-        extra_args.extend(["--resource-path", str(images_dir_obj.parent)])
-        logger.debug(f"Using resource path: {images_dir_obj.parent}")
+        extra_args.extend(["--resource-path", str(images_dir_obj)])
+        logger.debug(f"Using resource path: {images_dir_obj}")
     
     # Configure math rendering
     if math_format == "mathml":

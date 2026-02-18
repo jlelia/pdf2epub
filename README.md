@@ -88,6 +88,11 @@ pdf2epub paper.pdf --title "Research Paper"
 pdf2epub paper.pdf --math-format mathml --title "Research Paper"
 ```
 
+**Save intermediate Markdown (for debugging):**
+```bash
+pdf2epub input.pdf --save-markdown output.md
+```
+
 **Verbose output:**
 ```bash
 pdf2epub input.pdf -v
@@ -100,6 +105,7 @@ pdf2epub book.pdf \
   --title "The Great Book" \
   --author "Jane Doe" \
   --cover cover.png \
+  --save-markdown my-book.md \
   --verbose
 ```
 
@@ -118,7 +124,8 @@ epub_path = convert(
     title="My Book",
     author="Author Name",
     cover="cover.jpg",
-    math_format="svg"  # default; use "mathml" if your e-reader prefers it
+    math_format="svg",  # default; use "mathml" if your e-reader prefers it
+    save_markdown="output.md"  # optional; saves intermediate Markdown for debugging
 )
 
 print(f"EPUB created: {epub_path}")
@@ -134,6 +141,7 @@ print(f"EPUB created: {epub_path}")
 | `--author` | EPUB author metadata | None |
 | `--cover` | Path to cover image | None |
 | `--math-format` | Math rendering format (`mathml` or `svg`) | `svg` |
+| `--save-markdown` | Save intermediate Markdown file to this path | None |
 | `-v, --verbose` | Enable verbose logging | False |
 | `--version` | Show version and exit | - |
 | `--help` | Show help message | - |
