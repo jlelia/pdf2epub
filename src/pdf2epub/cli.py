@@ -50,6 +50,12 @@ logger = logging.getLogger(__name__)
     help="Format for rendering LaTeX math (default: svg)"
 )
 @click.option(
+    "--save-markdown",
+    type=click.Path(dir_okay=False, writable=True),
+    default=None,
+    help="Save the intermediate Markdown file to this path (useful for debugging)"
+)
+@click.option(
     "-v", "--verbose",
     is_flag=True,
     help="Enable verbose/debug logging"
@@ -62,6 +68,7 @@ def main(
     author: str | None,
     cover: str | None,
     math_format: str,
+    save_markdown: str | None,
     verbose: bool
 ) -> None:
     """Convert PDF files to EPUB format.
@@ -101,7 +108,8 @@ def main(
             title=title,
             author=author,
             cover=cover,
-            math_format=math_format.lower()
+            math_format=math_format.lower(),
+            save_markdown=save_markdown
         )
         
         click.echo(f"✓ Conversion complete: {result}")

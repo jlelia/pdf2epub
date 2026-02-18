@@ -174,3 +174,38 @@ class TestPandocStep:
             extra_args = mock_convert.call_args[1]["extra_args"]
             assert not any("title=" in str(arg) for arg in extra_args)
             assert not any("author=" in str(arg) for arg in extra_args)
+
+    def test_run_pandoc_resource_path_points_to_images_dir(self, tmp_path):
+        """Test that resource path points to images directory itself, not its parent.
+        
+        This verifies the fix for the issue where pandoc could not find images
+        because --resource-path pointed to the parent of images_dir instead of
+        images_dir itself.
+        """
+        markdown_path = tmp_path / "test.md"
+        markdown_path.write_text(
+            "# Test\n\n![Figure](_page_2_Picture_5.jpeg)\n"
+        )
+        
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        
+        # Create a fake image file inside images_dir
+        image_file = images_dir / "_page_2_Picture_5.jpeg"
+        image_file.write_bytes(b"fake image data")
+        
+        output_path = tmp_path / "output.epub"
+        
+        with patch("pypandoc.convert_file") as mock_convert:
+            def create_epub(*args, **kwargs):
+                output_path.write_bytes(b"fake epub")
+            
+            mock_convert.side_effect = create_epub
+            
+            run_pandoc(str(markdown_path), str(output_path), str(images_dir))
+            
+            # Verify resource path points to images_dir, not its parent
+            extra_args = mock_convert.call_args[1]["extra_args"]
+            resource_path_idx = extra_args.index("--resource-path")
+            resource_path = extra_args[resource_path_idx + 1]
+            assert resource_path == str(images_dir)

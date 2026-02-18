@@ -139,3 +139,32 @@ class TestConverter:
                 # Verify cover was passed to pandoc
                 call_kwargs = mock_pandoc.call_args[1]
                 assert call_kwargs["cover"] == str(cover_path)
+
+    def test_convert_save_markdown(self, tmp_path):
+        """Test that save_markdown copies the intermediate Markdown file."""
+        pdf_path = tmp_path / "test.pdf"
+        pdf_path.write_bytes(b"%PDF-1.4 fake pdf")
+        
+        output_path = tmp_path / "output.epub"
+        save_md_path = tmp_path / "saved" / "output.md"
+        
+        # Create a real markdown file that run_marker will "produce"
+        marker_output_dir = tmp_path / "marker_out"
+        marker_output_dir.mkdir()
+        md_file = marker_output_dir / "test.md"
+        md_file.write_text("# Test Document\n\nSome content.")
+        
+        with patch("pdf2epub.converter.run_marker") as mock_marker:
+            with patch("pdf2epub.converter.run_pandoc") as mock_pandoc:
+                mock_marker.return_value = (str(md_file), str(marker_output_dir / "images"))
+                mock_pandoc.return_value = str(output_path)
+                
+                convert(
+                    str(pdf_path),
+                    str(output_path),
+                    save_markdown=str(save_md_path)
+                )
+                
+                # Verify the markdown was saved
+                assert save_md_path.exists()
+                assert save_md_path.read_text() == "# Test Document\n\nSome content."
