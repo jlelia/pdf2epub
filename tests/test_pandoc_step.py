@@ -175,6 +175,87 @@ class TestPandocStep:
             assert not any("title=" in str(arg) for arg in extra_args)
             assert not any("author=" in str(arg) for arg in extra_args)
 
+    def test_run_pandoc_default_language(self, tmp_path):
+        """Test that the default language 'en' is set in EPUB metadata."""
+        markdown_path = tmp_path / "test.md"
+        markdown_path.write_text("# Test")
+        
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        
+        output_path = tmp_path / "output.epub"
+        
+        with patch("pypandoc.convert_file") as mock_convert:
+            def create_epub(*args, **kwargs):
+                output_path.write_bytes(b"fake epub")
+            
+            mock_convert.side_effect = create_epub
+            
+            run_pandoc(str(markdown_path), str(output_path), str(images_dir))
+            
+            # Verify default language 'en' is included
+            extra_args = mock_convert.call_args[1]["extra_args"]
+            assert "lang=en" in extra_args
+
+    def test_run_pandoc_custom_language(self, tmp_path):
+        """Test that a custom language tag is set in EPUB metadata."""
+        markdown_path = tmp_path / "test.md"
+        markdown_path.write_text("# Test")
+        
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+        
+        output_path = tmp_path / "output.epub"
+        
+        with patch("pypandoc.convert_file") as mock_convert:
+            def create_epub(*args, **kwargs):
+                output_path.write_bytes(b"fake epub")
+            
+            mock_convert.side_effect = create_epub
+            
+            run_pandoc(str(markdown_path), str(output_path), str(images_dir), language="fr")
+            
+            # Verify custom language 'fr' is included
+            extra_args = mock_convert.call_args[1]["extra_args"]
+            assert "lang=fr" in extra_args
+
+    def test_run_pandoc_date_is_set(self, tmp_path):
+        """Test that a dc:date in ISO 8601 format is always set in EPUB metadata.
+        
+        Pandoc only emits dc:date when the 'date' variable is explicitly
+        provided. Without it the field is absent, which violates the EPUB
+        spec recommendation and can cause issues on some Kindle devices.
+        """
+        import re
+
+        markdown_path = tmp_path / "test.md"
+        markdown_path.write_text("# Test")
+
+        images_dir = tmp_path / "images"
+        images_dir.mkdir()
+
+        output_path = tmp_path / "output.epub"
+
+        with patch("pypandoc.convert_file") as mock_convert:
+            def create_epub(*args, **kwargs):
+                output_path.write_bytes(b"fake epub")
+
+            mock_convert.side_effect = create_epub
+
+            run_pandoc(str(markdown_path), str(output_path), str(images_dir))
+
+            extra_args = mock_convert.call_args[1]["extra_args"]
+            # Find the value after "--metadata" that starts with "date="
+            date_args = [
+                arg for arg in extra_args if isinstance(arg, str) and arg.startswith("date=")
+            ]
+            assert len(date_args) == 1, "Expected exactly one date= metadata entry"
+            date_value = date_args[0][len("date="):]
+            # Must be a valid ISO 8601 date (YYYY-MM-DD)
+            assert re.match(r"^\d{4}-\d{2}-\d{2}$", date_value), (
+                f"date metadata '{date_value}' is not a valid ISO 8601 date"
+            )
+
     def test_run_pandoc_resource_path_points_to_images_dir(self, tmp_path):
         """Test that resource path points to images directory itself, not its parent.
         

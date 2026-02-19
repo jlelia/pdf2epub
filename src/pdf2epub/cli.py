@@ -56,6 +56,13 @@ logger = logging.getLogger(__name__)
     help="Save the intermediate Markdown file to this path (useful for debugging)"
 )
 @click.option(
+    "--language",
+    type=str,
+    default="en",
+    show_default=True,
+    help="BCP 47 language tag for the EPUB (e.g. 'en', 'fr', 'de')"
+)
+@click.option(
     "-v", "--verbose",
     is_flag=True,
     help="Enable verbose/debug logging"
@@ -69,6 +76,7 @@ def main(
     cover: str | None,
     math_format: str,
     save_markdown: str | None,
+    language: str,
     verbose: bool
 ) -> None:
     """Convert PDF files to EPUB format.
@@ -109,7 +117,8 @@ def main(
             author=author,
             cover=cover,
             math_format=math_format.lower(),
-            save_markdown=save_markdown
+            save_markdown=save_markdown,
+            language=language
         )
         
         click.echo(f"✓ Conversion complete: {result}")

@@ -1,6 +1,7 @@
 """Pandoc step for converting Markdown to EPUB."""
 
 import logging
+from datetime import date
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -18,7 +19,8 @@ def run_pandoc(
     title: str | None = None,
     author: str | None = None,
     cover: str | None = None,
-    math_format: str = "svg"
+    math_format: str = "svg",
+    language: str = "en"
 ) -> str:
     """Convert Markdown to EPUB using pandoc.
     
@@ -30,6 +32,7 @@ def run_pandoc(
         author: Optional author for the EPUB metadata.
         cover: Optional path to cover image.
         math_format: Format for rendering LaTeX math ('svg' or 'mathml').
+        language: BCP 47 language tag for the EPUB (default: 'en').
         
     Returns:
         Path to the generated EPUB file.
@@ -81,6 +84,18 @@ def run_pandoc(
     if author:
         extra_args.extend(["--metadata", f"author={author}"])
         logger.debug(f"Setting author: {author}")
+
+    # Set language (required by EPUB spec; missing language causes Kindle errors)
+    extra_args.extend(["--metadata", f"lang={language}"])
+    logger.debug(f"Setting language: {language}")
+
+    # Set publication date in ISO 8601 format. Pandoc only emits dc:date when
+    # this variable is explicitly provided; without it the field is absent.
+    # dc:date is recommended by the EPUB spec and its absence can cause
+    # validation errors when sending EPUBs to Kindle via Send to Kindle.
+    today = date.today().isoformat()
+    extra_args.extend(["--metadata", f"date={today}"])
+    logger.debug(f"Setting date: {today}")
     
     # Add cover image
     if cover:
